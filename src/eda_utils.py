@@ -1,56 +1,88 @@
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+# ---------------------------
+# BASIC DATA CHECKS
+# ---------------------------
 
-def check_missing_values(df):
-    missing = df.isnull().sum()
+def data_summary(df: pd.DataFrame):
+    """Print basic info and stats."""
+    print(df.info())
+    print(df.describe(include="all"))
 
-    return missing[missing > 0]
+
+def missing_values(df: pd.DataFrame):
+    """Return missing value counts."""
+    return df.isnull().sum().sort_values(ascending=False)
 
 
+# ---------------------------
+# FEATURE ENGINEERING
+# ---------------------------
 
-def calculate_loss_ratio(df):
+def add_risk_metrics(df: pd.DataFrame):
+    """
+    Adds:
+    - LossRatio
+    - Margin
+    """
+
+    df = df.copy()
+
     df["LossRatio"] = df["TotalClaims"] / df["TotalPremium"]
-
-    return df
-
-def calculate_margin(df):
     df["Margin"] = df["TotalPremium"] - df["TotalClaims"]
 
     return df
 
 
+# ---------------------------
+# PLOTS
+# ---------------------------
 
-def plot_histogram(df, column):
+def hist_plot(df, col):
     plt.figure(figsize=(8, 5))
-
-    sns.histplot(df[column], kde=True)
-
-    plt.title(f"Distribution of {column}")
-
+    sns.histplot(df[col], kde=True)
+    plt.title(f"Distribution of {col}")
     plt.show()
 
 
-
-def plot_boxplot(df, column):   
+def box_plot(df, col):
     plt.figure(figsize=(8, 5))
-
-    sns.boxplot(x=df[column])
-
-    plt.title(f"Boxplot of {column}")
-
+    sns.boxplot(x=df[col])
+    plt.title(f"Boxplot of {col}")
     plt.show()
 
 
-
-def plot_correlation(df):
-    numerical = df.select_dtypes(include="number")
-
-    plt.figure(figsize=(12, 8))
-
-    sns.heatmap(numerical.corr(), annot=True, cmap="coolwarm")
-
-    plt.title("Correlation Heatmap")
-
+def bar_plot(df, col):
+    plt.figure(figsize=(10, 5))
+    df[col].value_counts().plot(kind="bar")
+    plt.title(col)
+    plt.xticks(rotation=45)
     plt.show()
+
+
+def correlation_plot(df):
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(df.select_dtypes(include="number").corr(),
+                annot=True,
+                cmap="coolwarm")
+    plt.title("Correlation Matrix")
+    plt.show()
+
+
+# ---------------------------
+# BUSINESS INSIGHTS HELPERS
+# ---------------------------
+
+def loss_ratio_by_group(df, group_col):
+    return df.groupby(group_col)["LossRatio"].mean().sort_values(ascending=False)
+
+
+def claims_by_group(df, group_col):
+    return df.groupby(group_col)["TotalClaims"].mean().sort_values(ascending=False)
+
+
+def trend_over_time(df, time_col="TransactionMonth"):
+    return df.groupby(time_col)["TotalClaims"].sum()
